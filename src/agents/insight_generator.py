@@ -11,6 +11,8 @@ class InsightGeneratorAgent:
     SYSTEM_PROMPT_FLASH = """你是芯片技术规划专家。
 基于以下技术文献，生成一份"技术快讯"（One-Pager）内容。
 
+【强制要求】你必须且只能输出纯 JSON，不要任何 markdown 代码块标记，不要任何解释或分析文字。JSON 必须能被 Python json.loads 直接解析。
+
 要求：
 1. 技术名称：用一句话定义该技术方向
 2. 关键创新：3-4 个核心进展 bullet
@@ -18,10 +20,14 @@ class InsightGeneratorAgent:
 4. 主要玩家：该方向的主要公司/机构
 5. 一句话建议：对芯片设计团队的行动建议
 
-输出 JSON 格式，以便程序化生成 PPT。"""
+输出 JSON 格式示例：
+{"技术名称":"...","关键创新":["...","..."],"成熟度评估":{"等级":5,"理由":"..."},"主要玩家":["..."],"一句话建议":"..."}
+"""
 
     SYSTEM_PROMPT_DEEP = """你是芯片技术战略专家。
 基于以下多篇相关文献，生成一份"深度洞察报告"内容。
+
+【强制要求】你必须且只能输出纯 JSON，不要任何 markdown 代码块标记，不要任何解释或分析文字。JSON 必须能被 Python json.loads 直接解析。
 
 要求按以下章节组织：
 1. 封面标题 + 核心结论前置（一句话总结该技术方向的战略价值）
@@ -33,7 +39,7 @@ class InsightGeneratorAgent:
 7. 对芯片设计的启示：具体落地建议（3 条）
 8. 行动建议：短期（3个月）/中期（1年）/长期（3年）
 
-输出 JSON 格式。"""
+输出 JSON 格式，所有字符串值使用中文。"""
 
     def __init__(self):
         cfg = config.llm
@@ -43,7 +49,10 @@ class InsightGeneratorAgent:
         
         api_key = config.openai_api_key
         if api_key and api_key.startswith("sk-"):
-            self.client = OpenAI(api_key=api_key, base_url=config.openai_base_url)
+            client_kwargs = {"api_key": api_key, "base_url": config.openai_base_url}
+            if config.openai_default_headers:
+                client_kwargs["default_headers"] = config.openai_default_headers
+            self.client = OpenAI(**client_kwargs)
             self.use_mock = False
         else:
             self.client = None

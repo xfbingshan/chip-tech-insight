@@ -9,7 +9,7 @@ collection:
       - eess.SP # 信号处理
       - cs.SY  # 系统与控制
       - cs.DC  # 分布式/并行/集群计算
-    max_results: 50
+    max_results: 10
     days_back: 7
   rss:
     sources:
@@ -59,10 +59,10 @@ collection:
 
 # LLM配置
 llm:
-  provider: "openai"  # 可选: openai, azure
-  model: "gpt-4o-mini"
+  provider: "openai"  # 使用 Kimi Coding OpenAI 兼容接口
+  model: "kimi-k2-turbo-preview"
   temperature: 0.3
-  max_tokens: 2000
+  max_tokens: 4000
   
 # 向量存储
 vector_store:

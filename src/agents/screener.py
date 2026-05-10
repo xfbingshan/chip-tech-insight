@@ -13,10 +13,12 @@ class ScreenerAgent:
     SYSTEM_PROMPT = """你是资深芯片技术规划专家，拥有20年半导体行业经验。
 请对以下论文/文章进行结构化评估。
 
+【强制要求】你必须且只能输出纯 JSON，不要任何 markdown 代码块标记，不要任何解释或分析文字。JSON 必须能被 Python json.loads 直接解析。
+
 评估维度：
 1. relevance (0-10): 与芯片设计、EDA、先进工艺、封装、架构创新直接相关的程度
 2. category: 技术分类，必须从以下选择：Architecture, EDA, Process, Packaging, Memory, AI Chip, Interconnect, Photonics, Base Station / RAN, Other
-3. summary: 一句话摘要，用非技术高管也能听懂的话概括核心价值
+3. summary: 一句话摘要，用非技术高管也能听懂的话概括核心价值（50字以内）
 4. trl (1-9): 技术成熟度等级（1=原理验证，9=大规模量产）
 5. value_score (0-10): 对芯片设计工程师的参考价值和潜在影响
 6. decision: 处理建议，必须从以下选择：
@@ -26,7 +28,9 @@ class ScreenerAgent:
 7. key_players: 该技术方向的主要公司/机构（列表，最多3个）
 8. keywords: 关键技术关键词（列表，最多5个）
 
-输出严格 JSON 格式，不要任何 markdown 代码块标记。"""
+输出示例：
+{"relevance":8,"category":"AI Chip","summary":"...","trl":5,"value_score":8,"decision":"Deep Dive","key_players":["NVIDIA","AMD"],"keywords":["GPU","AI","accelerator"]}
+"""
 
     def __init__(self):
         cfg = config.llm
@@ -39,7 +43,10 @@ class ScreenerAgent:
         # 初始化 LLM 客户端（若未配置 API Key 则使用 mock）
         api_key = config.openai_api_key
         if api_key and api_key.startswith("sk-"):
-            self.client = OpenAI(api_key=api_key, base_url=config.openai_base_url)
+            client_kwargs = {"api_key": api_key, "base_url": config.openai_base_url}
+            if config.openai_default_headers:
+                client_kwargs["default_headers"] = config.openai_default_headers
+            self.client = OpenAI(**client_kwargs)
             self.use_mock = False
         else:
             self.client = None

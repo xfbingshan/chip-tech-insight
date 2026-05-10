@@ -14,6 +14,11 @@ class Config:
         
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
         self.openai_base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        
+        # Kimi Coding API 需要特定的 User-Agent
+        self.openai_default_headers = {}
+        if "api.kimi.com" in self.openai_base_url:
+            self.openai_default_headers = {"User-Agent": "claude-code/0.1.0"}
     
     def get(self, key_path: str, default=None):
         keys = key_path.split(".")

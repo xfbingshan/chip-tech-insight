@@ -11,6 +11,8 @@ class SummarizerAgent:
     SYSTEM_PROMPT = """你是芯片技术领域的资深技术编辑。
 请将以下论文/技术文章转化为结构化的技术情报卡片。
 
+【强制要求】你必须且只能输出纯 JSON，不要任何 markdown 代码块标记，不要任何解释或分析文字。JSON 必须能被 Python json.loads 直接解析。
+
 要求：
 1. 提取核心创新点（最多4条，每条不超过30字）
 2. 提取关键技术指标（如性能提升%、功耗降低%、面积缩减%，若有）
@@ -18,13 +20,8 @@ class SummarizerAgent:
 4. 提炼对芯片设计实践的直接启示（最多2条）
 
 输出 JSON 格式：
-{
-  "innovations": ["...", "..."],
-  "metrics": {"performance": "", "power": "", "area": ""},
-  "limitations": ["..."],
-  "implications": ["..."],
-  "technical_depth": "Brief|Moderate|Deep"
-}"""
+{"innovations":["...","..."],"metrics":{"performance":"","power":"","area":""},"limitations":["..."],"implications":["..."],"technical_depth":"Moderate"}
+"""
 
     def __init__(self):
         cfg = config.llm
@@ -34,7 +31,10 @@ class SummarizerAgent:
         
         api_key = config.openai_api_key
         if api_key and api_key.startswith("sk-"):
-            self.client = OpenAI(api_key=api_key, base_url=config.openai_base_url)
+            client_kwargs = {"api_key": api_key, "base_url": config.openai_base_url}
+            if config.openai_default_headers:
+                client_kwargs["default_headers"] = config.openai_default_headers
+            self.client = OpenAI(**client_kwargs)
             self.use_mock = False
         else:
             self.client = None

@@ -11,6 +11,7 @@ from src.collectors import ArxivCollector, RSSCollector, BlogScraperCollector
 from src.agents import ScreenerAgent, SummarizerAgent, InsightGeneratorAgent
 from src.storage import VectorStore, MetadataStore
 from src.reporting import ReportGenerator
+from src.reporting.ppt_generator import PPTGenerator
 from src.utils.config import config
 
 class InsightPipeline:
@@ -25,6 +26,7 @@ class InsightPipeline:
         self.vector_store = VectorStore()
         self.metadata_store = MetadataStore()
         self.report_generator = ReportGenerator()
+        self.ppt_generator = PPTGenerator()
         
         self.one_pager_threshold = config.reporting.get("one_pager_threshold", 7.5)
         print("[Pipeline] Ready.")
@@ -96,14 +98,24 @@ class InsightPipeline:
                 print(f"  [Deep Dive] {cluster_name} ({len(docs)} docs, avg_score={avg_score:.1f})")
                 content = self.insight_generator.generate_deep_dive(docs)
                 if not dry_run:
-                    path = self.report_generator.generate_deep_dive(content, docs)
-                    reports.append({"type": "deep_dive", "topic": cluster_name, "path": path})
+                    md_path = self.report_generator.generate_deep_dive(content, docs)
+                    try:
+                        ppt_path = self.ppt_generator.generate_deep_dive(content, docs)
+                        reports.append({"type": "deep_dive", "topic": cluster_name, "md_path": md_path, "ppt_path": ppt_path})
+                    except Exception as e:
+                        print(f"    [PPT Error] {e}")
+                        reports.append({"type": "deep_dive", "topic": cluster_name, "md_path": md_path})
             else:
                 print(f"  [Flash Brief] {cluster_name} ({len(docs)} docs, avg_score={avg_score:.1f})")
                 content = self.insight_generator.generate_flash(docs)
                 if not dry_run:
-                    path = self.report_generator.generate_flash_brief(content, docs)
-                    reports.append({"type": "flash_brief", "topic": cluster_name, "path": path})
+                    md_path = self.report_generator.generate_flash_brief(content, docs)
+                    try:
+                        ppt_path = self.ppt_generator.generate_flash_brief(content, docs)
+                        reports.append({"type": "flash_brief", "topic": cluster_name, "md_path": md_path, "ppt_path": ppt_path})
+                    except Exception as e:
+                        print(f"    [PPT Error] {e}")
+                        reports.append({"type": "flash_brief", "topic": cluster_name, "md_path": md_path})
         
         # Stage 5b: 生成机构动态报告
         print("\n[Stage 5b] Generating organization briefs...")
@@ -137,19 +149,21 @@ class InsightPipeline:
         except Exception as e:
             print(f"[Collector Error] arXiv: {e}")
         
-        try:
-            rss_docs = self.rss_collector.fetch()
-            print(f"  RSS: {len(rss_docs)} articles")
-            docs.extend(rss_docs)
-        except Exception as e:
-            print(f"[Collector Error] RSS: {e}")
+        # RSS 采集在当前环境网络受限，跳过以加快流程
+        # try:
+        #     rss_docs = self.rss_collector.fetch()
+        #     print(f"  RSS: {len(rss_docs)} articles")
+        #     docs.extend(rss_docs)
+        # except Exception as e:
+        #     print(f"[Collector Error] RSS: {e}")
         
-        try:
-            blog_docs = self.blog_collector.fetch()
-            print(f"  Blogs: {len(blog_docs)} articles")
-            docs.extend(blog_docs)
-        except Exception as e:
-            print(f"[Collector Error] Blogs: {e}")
+        # Blogs 采集在当前环境网络受限，跳过
+        # try:
+        #     blog_docs = self.blog_collector.fetch()
+        #     print(f"  Blogs: {len(blog_docs)} articles")
+        #     docs.extend(blog_docs)
+        # except Exception as e:
+        #     print(f"[Collector Error] Blogs: {e}")
         
         return docs
     
