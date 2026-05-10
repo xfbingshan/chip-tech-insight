@@ -66,7 +66,8 @@ class ReportGenerator:
         """生成深度洞察报告（Markdown 多页）"""
         lines = []
         lines.append("# 深度洞察 | " + content.get("封面标题", "Unknown"))
-        lines.append(f"\n**生成日期**: {datetime.now().strftime('%Y年%m月%d日')}  ")
+        now = datetime.now()
+        lines.append(f"\n**生成日期**: {now.year}-{now.month:02d}-{now.day:02d}  ")
         lines.append(f"**核心结论**: {content.get('核心结论', '')}\n")
         lines.append("---\n")
 
