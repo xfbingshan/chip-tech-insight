@@ -100,7 +100,8 @@ class TestRSSCollector:
     @patch("src.collectors.rss_collector.requests.get")
     def test_fetch_graceful_on_error(self, mock_get):
         """某个源失败时优雅跳过"""
-        mock_get.side_effect = Exception("Network error")
+        import requests
+        mock_get.side_effect = requests.exceptions.RequestException("Network error")
 
         collector = RSSCollector()
         collector.sources = [{"name": "Broken", "url": "https://broken.example.com"}]

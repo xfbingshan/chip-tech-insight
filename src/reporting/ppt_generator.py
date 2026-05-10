@@ -6,7 +6,7 @@ PPT 报告生成器
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -19,7 +19,7 @@ from src.reporting.template_config import load_template, PPTTemplate
 
 
 class PPTGenerator:
-    def __init__(self):
+    def __init__(self) -> None:
         self.output_dir = Path(config.reporting.get("output_dir", "./data/reports"))
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.template = load_template()
@@ -27,7 +27,7 @@ class PPTGenerator:
         self.prs.slide_width = Inches(self.template.slide_width)
         self.prs.slide_height = Inches(self.template.slide_height)
     
-    def generate_flash_brief(self, content: Dict, docs: List[Dict]) -> str:
+    def generate_flash_brief(self, content: Dict[str, Any], docs: List[Dict[str, Any]]) -> str:
         """生成技术快讯（单页）"""
         self.prs = Presentation()
         self.prs.slide_width = Inches(self.template.slide_width)
@@ -117,7 +117,7 @@ class PPTGenerator:
         self.prs.save(filepath)
         return str(filepath)
     
-    def generate_deep_dive(self, content: Dict, docs: List[Dict]) -> str:
+    def generate_deep_dive(self, content: Dict[str, Any], docs: List[Dict[str, Any]]) -> str:
         """生成深度洞察报告（多页）"""
         self.prs = Presentation()
         self.prs.slide_width = Inches(self.template.slide_width)

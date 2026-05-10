@@ -5,7 +5,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Any, Dict, List, Optional
 from src.utils.config import config
 
 class MetadataStore:
@@ -19,7 +19,7 @@ class MetadataStore:
         with open(self.index_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(doc, ensure_ascii=False) + "\n")
     
-    def load_all(self) -> List[Dict]:
+    def load_all(self) -> List[Dict[str, Any]]:
         """加载所有文档"""
         docs = []
         idx_path = Path(self.index_file)
@@ -33,7 +33,7 @@ class MetadataStore:
                     docs.append(json.loads(line))
         return docs
     
-    def load_recent(self, days: int = 7) -> List[Dict]:
+    def load_recent(self, days: int = 7) -> List[Dict[str, Any]]:
         """加载最近几天的文档"""
         all_docs = self.load_all()
         cutoff = datetime.now() - __import__('datetime').timedelta(days=days)

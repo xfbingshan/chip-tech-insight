@@ -170,6 +170,64 @@ class ReportGenerator:
         """
 ```
 
+### PPTGenerator
+```python
+class PPTGenerator:
+    def __init__(self) -> None:
+        # 从 config.reporting 读取 output_dir 和模板配置
+        # 默认使用 tech_blue 主题
+        ...
+    
+    def generate_flash_brief(self, content: Dict, docs: List[Dict]) -> str:
+        """
+        生成 PPT 格式的技术快讯报告。
+        返回：生成的 .pptx 文件路径
+        """
+    
+    def generate_deep_dive(self, content: Dict, docs: List[Dict]) -> str:
+        """
+        生成 PPT 格式的深度洞察报告。
+        返回：生成的 .pptx 文件路径
+        """
+```
+
+**PPTTemplate** (主题配置):
+```python
+@dataclass
+class PPTTemplate:
+    primary: RGBColor; accent: RGBColor; text: RGBColor
+    light_bg: RGBColor; white: RGBColor
+    title_font_size: int; section_font_size: int; body_font_size: int
+    slide_width: float; slide_height: float
+
+def load_template(name: Optional[str] = None) -> PPTTemplate: ...
+def list_templates() -> List[str]: ...
+```
+
+### ArchiveManager
+```python
+class ArchiveManager:
+    def __init__(self) -> None:
+        # 从 config.reporting.archive 读取配置
+        # enabled, keep_days, index_file
+        ...
+    
+    def archive_reports(self, report_paths: List[str], run_date: Optional[str] = None) -> Dict:
+        """
+        将报告归档到日期子目录 (YYYY-MM-DD/)。
+        返回：归档元数据 {date, paths, index_path}
+        """
+    
+    def list_archives(self, days: int = 30) -> List[Dict]:
+        """列出最近 N 天的归档记录"""
+    
+    def get_archive(self, date: str) -> List[Dict]:
+        """获取指定日期的归档内容"""
+    
+    def cleanup_old_reports(self) -> None:
+        """清理超过 keep_days 天的旧归档"""
+```
+
 ---
 
 ## 5. Pipeline 接口
@@ -181,7 +239,7 @@ class InsightPipeline:
         # 初始化所有采集器、Agent、存储、报告生成器
         ...
     
-    def run(self, dry_run: bool = False) -> List[Dict]:
+    def run(self, dry_run: bool = False) -> List[Dict[str, Any]]:
         """
         执行完整工作流。
         
@@ -189,14 +247,15 @@ class InsightPipeline:
             dry_run: True 时不保存数据，仅打印流程
         
         Returns:
-            报告列表，每项包含 type, topic, path
+            报告列表，每项包含 type, topic, md_path, ppt_path
         """
 ```
 
 **内部阶段**：
-1. `_collect()` → `List[Dict]`（Raw Docs）
-2. `screener.batch_screen()` → `List[Dict]`（Screened Docs）
-3. `summarizer.summarize()` + `vector_store.add()` + `metadata_store.save()` → `List[Dict]`（Processed Docs）
-4. `_cluster()` → `Dict[str, List[Dict]]`（技术方向簇）
-5. `_cluster_by_org()` → `Dict[str, List[Dict]]`（机构维度簇）
-6. 报告生成 → `List[Dict]`（报告元数据）
+1. `_collect()` → `List[Dict[str, Any]]`（Raw Docs）
+2. `screener.batch_screen()` → `List[Dict[str, Any]]`（Screened Docs）
+3. `summarizer.summarize()` + `vector_store.add()` + `metadata_store.save()` → `List[Dict[str, Any]]`（Processed Docs）
+4. `_cluster()` → `Dict[str, List[Dict[str, Any]]]`（技术方向簇）
+5. `_cluster_by_org()` → `Dict[str, List[Dict[str, Any]]]`（机构维度簇）
+6. 报告生成（Markdown + PPT） → `List[Dict[str, Any]]`（报告元数据）
+7. `archive_manager.archive_reports()` → 归档管理（可选）

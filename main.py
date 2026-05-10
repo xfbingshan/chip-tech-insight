@@ -8,10 +8,10 @@ Usage:
 """
 import argparse
 import sys
-import os
+from pathlib import Path
 
 # 将项目根目录加入路径
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = str(Path(__file__).resolve().parent)
 sys.path.insert(0, project_root)
 
 from src.scheduler.pipeline import InsightPipeline

@@ -6,12 +6,12 @@ import json
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from src.utils.config import config
 
 
 class ArchiveManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.archive_cfg = config.reporting.get("archive", {})
         self.enabled = self.archive_cfg.get("enabled", True)
         self.keep_days = self.archive_cfg.get("keep_days", 30)
@@ -23,7 +23,7 @@ class ArchiveManager:
         
         self.base_dir = Path(config.reporting.get("output_dir", "./data/reports"))
     
-    def archive_reports(self, report_paths: List[str], run_date: str = None) -> Dict:
+    def archive_reports(self, report_paths: List[str], run_date: Optional[str] = None) -> Dict[str, Any]:
         """
         将报告归档到日期子目录，并更新索引
         返回归档记录
@@ -64,7 +64,7 @@ class ArchiveManager:
         self._update_index(record)
         return {"archived": archived, "skipped": skipped, "record": record}
     
-    def list_archives(self, days: int = None) -> List[Dict]:
+    def list_archives(self, days: Optional[int] = None) -> List[Dict[str, Any]]:
         """按时间倒序列出归档记录"""
         index = self._load_index()
         records = index.get("records", [])
@@ -78,7 +78,7 @@ class ArchiveManager:
         
         return sorted(records, key=lambda x: x.get("timestamp", ""), reverse=True)
     
-    def get_archive(self, date: str) -> Optional[Dict]:
+    def get_archive(self, date: str) -> Optional[Dict[str, Any]]:
         """查询某一天的归档报告"""
         index = self._load_index()
         for record in index.get("records", []):

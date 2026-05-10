@@ -3,7 +3,7 @@
 """
 import json
 import re
-from typing import List, Dict
+from typing import Any, Dict, List
 from openai import OpenAI
 from src.utils.config import config
 
@@ -41,7 +41,7 @@ class InsightGeneratorAgent:
 
 输出 JSON 格式，所有字符串值使用中文。"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         cfg = config.llm
         self.model = cfg.get("model", "gpt-4o-mini")
         self.temperature = 0.4
@@ -59,7 +59,7 @@ class InsightGeneratorAgent:
             self.use_mock = True
             print("[InsightGenerator] OPENAI_API_KEY not set, using MOCK mode for demo.")
     
-    def generate_flash(self, docs: List[Dict]) -> Dict:
+    def generate_flash(self, docs: List[Dict[str, Any]]) -> Dict[str, Any]:
         if self.use_mock:
             return self._mock_flash(docs)
         
@@ -75,7 +75,7 @@ class InsightGeneratorAgent:
         )
         return self._parse_json_response(response.choices[0].message.content, "flash")
     
-    def generate_deep_dive(self, docs: List[Dict]) -> Dict:
+    def generate_deep_dive(self, docs: List[Dict[str, Any]]) -> Dict[str, Any]:
         if self.use_mock:
             return self._mock_deep_dive(docs)
         
@@ -91,7 +91,7 @@ class InsightGeneratorAgent:
         )
         return self._parse_json_response(response.choices[0].message.content, "deep_dive")
     
-    def _build_context(self, docs: List[Dict]) -> str:
+    def _build_context(self, docs: List[Dict[str, Any]]) -> str:
         lines = [f"共 {len(docs)} 篇相关文献：\n"]
         for i, doc in enumerate(docs, 1):
             assessment = doc.get("assessment", {})
@@ -104,7 +104,7 @@ class InsightGeneratorAgent:
             lines.append("")
         return "\n".join(lines)
     
-    def _parse_json_response(self, content: str, default_type: str) -> Dict:
+    def _parse_json_response(self, content: str, default_type: str) -> Dict[str, Any]:
         content = re.sub(r"```json\s*", "", content)
         content = re.sub(r"```\s*", "", content)
         try:
@@ -112,7 +112,7 @@ class InsightGeneratorAgent:
         except:
             return {"raw": content, "type": default_type}
     
-    def _mock_flash(self, docs: List[Dict]) -> Dict:
+    def _mock_flash(self, docs: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Mock 快讯生成"""
         assessment = docs[0].get("assessment", {})
         category = assessment.get("category", "芯片技术")
@@ -133,7 +133,7 @@ class InsightGeneratorAgent:
             "一句话建议": f"建议持续关注 {category} 方向进展，评估与当前项目的关联性。",
         }
     
-    def _mock_deep_dive(self, docs: List[Dict]) -> Dict:
+    def _mock_deep_dive(self, docs: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Mock 深度洞察生成"""
         assessment = docs[0].get("assessment", {})
         category = assessment.get("category", "芯片技术")

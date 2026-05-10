@@ -1,7 +1,7 @@
 """
 MetadataStore 单元测试
 """
-import os
+from pathlib import Path
 import json
 import pytest
 from src.storage.metadata_store import MetadataStore
@@ -11,9 +11,9 @@ class TestMetadataStore:
     def test_save_and_load(self, temp_dir, sample_doc):
         """保存后能正确加载"""
         store = MetadataStore()
-        store.data_dir = os.path.join(temp_dir, "documents")
-        store.index_file = os.path.join(store.data_dir, "index.jsonl")
-        os.makedirs(store.data_dir, exist_ok=True)
+        store.data_dir = Path(temp_dir) / "documents"
+        store.index_file = store.data_dir / "index.jsonl"
+        store.data_dir.mkdir(parents=True, exist_ok=True)
 
         store.save(sample_doc)
         docs = store.load_all()
@@ -23,9 +23,9 @@ class TestMetadataStore:
     def test_load_all_empty(self, temp_dir):
         """空索引返回空列表"""
         store = MetadataStore()
-        store.data_dir = os.path.join(temp_dir, "documents")
-        store.index_file = os.path.join(store.data_dir, "index.jsonl")
-        os.makedirs(store.data_dir, exist_ok=True)
+        store.data_dir = Path(temp_dir) / "documents"
+        store.index_file = store.data_dir / "index.jsonl"
+        store.data_dir.mkdir(parents=True, exist_ok=True)
 
         docs = store.load_all()
         assert docs == []
@@ -33,9 +33,9 @@ class TestMetadataStore:
     def test_multiple_saves(self, temp_dir, sample_doc):
         """多次保存应追加而非覆盖"""
         store = MetadataStore()
-        store.data_dir = os.path.join(temp_dir, "documents")
-        store.index_file = os.path.join(store.data_dir, "index.jsonl")
-        os.makedirs(store.data_dir, exist_ok=True)
+        store.data_dir = Path(temp_dir) / "documents"
+        store.index_file = store.data_dir / "index.jsonl"
+        store.data_dir.mkdir(parents=True, exist_ok=True)
 
         doc1 = {**sample_doc, "id": "doc-1"}
         doc2 = {**sample_doc, "id": "doc-2"}
@@ -50,9 +50,9 @@ class TestMetadataStore:
     def test_load_recent(self, temp_dir, sample_doc):
         """能按日期范围加载"""
         store = MetadataStore()
-        store.data_dir = os.path.join(temp_dir, "documents")
-        store.index_file = os.path.join(store.data_dir, "index.jsonl")
-        os.makedirs(store.data_dir, exist_ok=True)
+        store.data_dir = Path(temp_dir) / "documents"
+        store.index_file = store.data_dir / "index.jsonl"
+        store.data_dir.mkdir(parents=True, exist_ok=True)
 
         # 一篇今天的，一篇去年的
         today_doc = {**sample_doc, "published": "2026-05-10T00:00:00"}

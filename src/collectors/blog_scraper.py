@@ -12,11 +12,11 @@ class BlogScraperCollector:
     """
     通用博客爬虫，支持通过配置的正则规则从 HTML 中提取文章。
     """
-    def __init__(self):
-        self.blogs = config.collection.get("blogs", [])
-        self.days_back = config.collection.get("arxiv", {}).get("days_back", 7)
+    def __init__(self) -> None:
+        self.blogs: List[Dict[str, str]] = config.collection.get("blogs", [])
+        self.days_back: int = config.collection.get("arxiv", {}).get("days_back", 7)
     
-    def fetch(self) -> List[Dict]:
+    def fetch(self) -> List[Dict[str, str]]:
         """爬取所有配置的博客"""
         results = []
         if not self.blogs:
@@ -28,7 +28,7 @@ class BlogScraperCollector:
                 docs = self._scrape_blog(blog)
                 print(f"  [Blog] {blog['name']}: {len(docs)} articles")
                 results.extend(docs)
-            except Exception as e:
+            except (requests.exceptions.RequestException, KeyError) as e:
                 print(f"  [Blog Error] {blog.get('name', 'unknown')}: {e}")
         return results
     

@@ -5,12 +5,12 @@ import json
 import re
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 from openai import OpenAI
 from src.utils.config import config
 
 class ScreenerAgent:
-    SYSTEM_PROMPT = """你是资深芯片技术规划专家，拥有20年半导体行业经验。
+    SYSTEM_PROMPT: str = """你是资深芯片技术规划专家，拥有20年半导体行业经验。
 请对以下论文/文章进行结构化评估。
 
 【强制要求】你必须且只能输出纯 JSON，不要任何 markdown 代码块标记，不要任何解释或分析文字。JSON 必须能被 Python json.loads 直接解析。
@@ -32,7 +32,7 @@ class ScreenerAgent:
 {"relevance":8,"category":"AI Chip","summary":"...","trl":5,"value_score":8,"decision":"Deep Dive","key_players":["NVIDIA","AMD"],"keywords":["GPU","AI","accelerator"]}
 """
 
-    def __init__(self):
+    def __init__(self) -> None:
         cfg = config.llm
         self.model = cfg.get("model", "gpt-4o-mini")
         self.temperature = cfg.get("temperature", 0.3)
@@ -53,7 +53,7 @@ class ScreenerAgent:
             self.use_mock = True
             print("[Screener] OPENAI_API_KEY not set, using MOCK mode for demo.")
     
-    def screen(self, doc: Dict) -> Optional[Dict]:
+    def screen(self, doc: Dict[str, str]) -> Optional[Dict[str, Any]]:
         if self.use_mock:
             return self._mock_screen(doc)
         
@@ -85,11 +85,11 @@ class ScreenerAgent:
                 "screened_at": datetime.now().isoformat(),
             }
             
-        except Exception as e:
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
             print(f"[Screener Error] {doc.get('title', '')[:40]}: {e}")
             return None
     
-    def batch_screen(self, docs: list) -> list:
+    def batch_screen(self, docs: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         results = []
         for doc in docs:
             screened = self.screen(doc)
@@ -97,7 +97,7 @@ class ScreenerAgent:
                 results.append(screened)
         return results
     
-    def _mock_screen(self, doc: Dict) -> Optional[Dict]:
+    def _mock_screen(self, doc: Dict[str, str]) -> Optional[Dict[str, Any]]:
         """Mock 模式：基于关键词规则做初筛，用于无 API Key 演示"""
         title = doc.get("title", "").lower()
         abstract = doc.get("abstract", "").lower()

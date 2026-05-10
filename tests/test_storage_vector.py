@@ -1,8 +1,7 @@
 """
 VectorStore 单元测试
 """
-import os
-import json
+from pathlib import Path
 import pytest
 from src.storage.vector_store import VectorStore
 
@@ -11,16 +10,16 @@ class TestVectorStore:
     def test_init_creates_directories(self, temp_dir):
         """初始化时创建必要的目录"""
         store = VectorStore()
-        assert os.path.exists(store.path)
+        assert Path(store.path).exists()
 
     def test_add_new_document(self, temp_dir, sample_doc):
         """添加新文档应成功"""
         store = VectorStore()
-        store.path = os.path.join(temp_dir, "vector_db")
-        store.docs_file = os.path.join(store.path, "docs.jsonl")
-        store.vocab_file = os.path.join(store.path, "vocab.json")
-        store.idf_file = os.path.join(store.path, "idf.json")
-        os.makedirs(store.path, exist_ok=True)
+        store.path = Path(temp_dir) / "vector_db"
+        store.docs_file = store.path / "docs.jsonl"
+        store.vocab_file = store.path / "vocab.json"
+        store.idf_file = store.path / "idf.json"
+        store.path.mkdir(parents=True, exist_ok=True)
         store.documents = []
         store.vocab = {}
         store.idf = {}
@@ -33,11 +32,11 @@ class TestVectorStore:
     def test_duplicate_document_rejected(self, temp_dir, sample_doc):
         """重复文档应被拒绝"""
         store = VectorStore()
-        store.path = os.path.join(temp_dir, "vector_db")
-        store.docs_file = os.path.join(store.path, "docs.jsonl")
-        store.vocab_file = os.path.join(store.path, "vocab.json")
-        store.idf_file = os.path.join(store.path, "idf.json")
-        os.makedirs(store.path, exist_ok=True)
+        store.path = Path(temp_dir) / "vector_db"
+        store.docs_file = store.path / "docs.jsonl"
+        store.vocab_file = store.path / "vocab.json"
+        store.idf_file = store.path / "idf.json"
+        store.path.mkdir(parents=True, exist_ok=True)
         store.documents = []
         store.vocab = {}
         store.idf = {}
@@ -49,11 +48,11 @@ class TestVectorStore:
     def test_search_returns_results(self, temp_dir, sample_doc):
         """语义检索应返回结果"""
         store = VectorStore()
-        store.path = os.path.join(temp_dir, "vector_db")
-        store.docs_file = os.path.join(store.path, "docs.jsonl")
-        store.vocab_file = os.path.join(store.path, "vocab.json")
-        store.idf_file = os.path.join(store.path, "idf.json")
-        os.makedirs(store.path, exist_ok=True)
+        store.path = Path(temp_dir) / "vector_db"
+        store.docs_file = store.path / "docs.jsonl"
+        store.vocab_file = store.path / "vocab.json"
+        store.idf_file = store.path / "idf.json"
+        store.path.mkdir(parents=True, exist_ok=True)
         store.documents = []
         store.vocab = {}
         store.idf = {}

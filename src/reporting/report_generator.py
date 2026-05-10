@@ -5,15 +5,15 @@
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 from src.utils.config import config
 
 class ReportGenerator:
-    def __init__(self):
+    def __init__(self) -> None:
         self.output_dir = Path(config.reporting.get("output_dir", "./data/reports"))
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
-    def generate_flash_brief(self, content: Dict, docs: List[Dict]) -> str:
+    def generate_flash_brief(self, content: Dict[str, Any], docs: List[Dict[str, Any]]) -> str:
         """生成技术快讯（Markdown 单页）"""
         lines = []
         lines.append("# 技术快讯 | " + content.get("技术名称", "Unknown"))
@@ -51,7 +51,7 @@ class ReportGenerator:
         filepath.write_text(md_text, encoding="utf-8")
         return str(filepath)
     
-    def generate_deep_dive(self, content: Dict, docs: List[Dict]) -> str:
+    def generate_deep_dive(self, content: Dict[str, Any], docs: List[Dict[str, Any]]) -> str:
         """生成深度洞察报告（Markdown 多页）"""
         lines = []
         lines.append("# 深度洞察 | " + content.get("封面标题", "Unknown"))
@@ -123,7 +123,7 @@ class ReportGenerator:
         filepath.write_text(md_text, encoding="utf-8")
         return str(filepath)
     
-    def generate_org_brief(self, org_name: str, docs: List[Dict]) -> str:
+    def generate_org_brief(self, org_name: str, docs: List[Dict[str, Any]]) -> str:
         """生成机构动态报告（按机构维度）"""
         lines = []
         lines.append(f"# 机构动态 | {org_name} 技术洞察")

@@ -8,12 +8,12 @@ from typing import List, Dict
 from src.utils.config import config
 
 class RSSCollector:
-    def __init__(self):
+    def __init__(self) -> None:
         cfg = config.collection.get("rss", {})
-        self.sources = cfg.get("sources", [])
-        self.max_entries = cfg.get("max_entries", 30)
+        self.sources: List[Dict[str, str]] = cfg.get("sources", [])
+        self.max_entries: int = cfg.get("max_entries", 30)
     
-    def fetch(self) -> List[Dict]:
+    def fetch(self) -> List[Dict[str, str]]:
         results = []
         cutoff = datetime.now().replace(tzinfo=__import__('datetime').timezone.utc) - timedelta(days=config.collection.get("arxiv", {}).get("days_back", 7))
         
@@ -74,7 +74,7 @@ class RSSCollector:
                             "source": f"rss:{source['name']}",
                             "category": "news",
                         })
-            except Exception as e:
+            except (requests.exceptions.RequestException, ET.ParseError) as e:
                 print(f"[RSS Error] {source['name']}: {e}")
         
         return results

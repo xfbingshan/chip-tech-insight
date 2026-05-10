@@ -4,19 +4,19 @@ arXiv 论文采集器 - 使用 requests + xml 解析
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List, Dict, Optional
 from src.utils.config import config
 
 ARXIV_API = "http://export.arxiv.org/api/query"
 
 class ArxivCollector:
-    def __init__(self):
+    def __init__(self) -> None:
         cfg = config.collection.get("arxiv", {})
-        self.categories = cfg.get("categories", ["cs.AR"])
-        self.max_results = cfg.get("max_results", 50)
-        self.days_back = cfg.get("days_back", 7)
+        self.categories: List[str] = cfg.get("categories", ["cs.AR"])
+        self.max_results: int = cfg.get("max_results", 50)
+        self.days_back: int = cfg.get("days_back", 7)
     
-    def fetch(self) -> List[Dict]:
+    def fetch(self) -> List[Dict[str, str]]:
         query = " OR ".join([f"cat:{c}" for c in self.categories])
         params = {
             "search_query": query,

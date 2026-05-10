@@ -6,7 +6,7 @@ import json
 import math
 import re
 from pathlib import Path
-from typing import List, Dict
+from typing import Any, Dict, List
 import numpy as np
 from src.utils.config import config
 
@@ -55,7 +55,7 @@ class VectorStore:
         self._save_docs()
         return True
     
-    def search(self, query: str, top_k: int = 5) -> List[Dict]:
+    def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """语义检索"""
         if not self.documents:
             return []

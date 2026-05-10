@@ -3,7 +3,7 @@
 """
 import json
 import re
-from typing import Dict
+from typing import Any, Dict
 from openai import OpenAI
 from src.utils.config import config
 
@@ -23,7 +23,7 @@ class SummarizerAgent:
 {"innovations":["...","..."],"metrics":{"performance":"","power":"","area":""},"limitations":["..."],"implications":["..."],"technical_depth":"Moderate"}
 """
 
-    def __init__(self):
+    def __init__(self) -> None:
         cfg = config.llm
         self.model = cfg.get("model", "gpt-4o-mini")
         self.temperature = cfg.get("temperature", 0.3)
@@ -41,7 +41,7 @@ class SummarizerAgent:
             self.use_mock = True
             print("[Summarizer] OPENAI_API_KEY not set, using MOCK mode for demo.")
     
-    def summarize(self, doc: Dict) -> Dict:
+    def summarize(self, doc: Dict[str, Any]) -> Dict[str, Any]:
         if self.use_mock:
             return self._mock_summarize(doc)
         
@@ -66,7 +66,7 @@ class SummarizerAgent:
             doc["structured_summary"] = summary
             return doc
             
-        except Exception as e:
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
             print(f"[Summarizer Error] {doc.get('title', '')[:40]}: {e}")
             doc["structured_summary"] = {
                 "innovations": [],
@@ -77,7 +77,7 @@ class SummarizerAgent:
             }
             return doc
     
-    def _mock_summarize(self, doc: Dict) -> Dict:
+    def _mock_summarize(self, doc: Dict[str, Any]) -> Dict[str, Any]:
         """Mock 摘要：提取前几句作为创新点"""
         abstract = doc.get("abstract", "")
         sentences = [s.strip() for s in abstract.split(".") if len(s.strip()) > 20]

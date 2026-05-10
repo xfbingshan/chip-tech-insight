@@ -1,7 +1,7 @@
 """
 ReportGenerator 单元测试
 """
-import os
+from pathlib import Path
 import pytest
 from src.reporting.report_generator import ReportGenerator
 
@@ -21,7 +21,7 @@ class TestReportGenerator:
         }
         path = gen.generate_flash_brief(content, [sample_doc])
 
-        assert os.path.exists(path)
+        assert Path(path).exists()
         assert path.endswith(".md")
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
@@ -46,7 +46,7 @@ class TestReportGenerator:
         }
         path = gen.generate_deep_dive(content, [sample_doc])
 
-        assert os.path.exists(path)
+        assert Path(path).exists()
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
         assert "Deep Dive Test" in text
@@ -59,7 +59,7 @@ class TestReportGenerator:
 
         path = gen.generate_org_brief("Intel", [sample_screened_doc])
 
-        assert os.path.exists(path)
+        assert Path(path).exists()
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
         assert "Intel" in text

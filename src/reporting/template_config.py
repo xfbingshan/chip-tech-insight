@@ -33,7 +33,7 @@ def _hex_to_rgb(hex_str: str) -> RGBColor:
     return RGBColor(r, g, b)
 
 
-def load_template(name: str = None) -> PPTTemplate:
+def load_template(name: Optional[str] = None) -> PPTTemplate:
     """
     从 settings.yaml 加载指定 PPT 主题
     若配置缺失或主题不存在，回退到默认科技蓝

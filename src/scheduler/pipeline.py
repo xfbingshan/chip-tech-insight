@@ -2,9 +2,11 @@
 主工作流编排：从采集到报告的完整 Pipeline
 """
 import os
+import requests
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict
+from typing import Any, Dict, List, Optional
 from collections import defaultdict
 
 from src.collectors import ArxivCollector, RSSCollector, BlogScraperCollector
@@ -16,7 +18,7 @@ from src.reporting.archive_manager import ArchiveManager
 from src.utils.config import config
 
 class InsightPipeline:
-    def __init__(self):
+    def __init__(self) -> None:
         print("[Pipeline] Initializing...")
         self.arxiv_collector = ArxivCollector()
         self.rss_collector = RSSCollector()
@@ -30,10 +32,10 @@ class InsightPipeline:
         self.ppt_generator = PPTGenerator()
         self.archive_manager = ArchiveManager()
         
-        self.one_pager_threshold = config.reporting.get("one_pager_threshold", 7.5)
+        self.one_pager_threshold: float = config.reporting.get("one_pager_threshold", 7.5)
         print("[Pipeline] Ready.")
     
-    def run(self, dry_run: bool = False):
+    def run(self, dry_run: bool = False) -> List[Dict[str, Any]]:
         """
         执行完整工作流
         dry_run: 如果为 True，不保存到数据库，仅打印结果
@@ -110,7 +112,7 @@ class InsightPipeline:
                     try:
                         ppt_path = self.ppt_generator.generate_deep_dive(content, docs)
                         reports.append({"type": "deep_dive", "topic": cluster_name, "md_path": md_path, "ppt_path": ppt_path})
-                    except Exception as e:
+                    except OSError as e:
                         print(f"    [PPT Error] {e}")
                         reports.append({"type": "deep_dive", "topic": cluster_name, "md_path": md_path})
             else:
@@ -121,7 +123,7 @@ class InsightPipeline:
                     try:
                         ppt_path = self.ppt_generator.generate_flash_brief(content, docs)
                         reports.append({"type": "flash_brief", "topic": cluster_name, "md_path": md_path, "ppt_path": ppt_path})
-                    except Exception as e:
+                    except OSError as e:
                         print(f"    [PPT Error] {e}")
                         reports.append({"type": "flash_brief", "topic": cluster_name, "md_path": md_path})
         
@@ -168,7 +170,7 @@ class InsightPipeline:
             arxiv_docs = self.arxiv_collector.fetch()
             print(f"  arXiv: {len(arxiv_docs)} papers")
             docs.extend(arxiv_docs)
-        except Exception as e:
+        except (requests.exceptions.RequestException, ET.ParseError) as e:
             print(f"[Collector Error] arXiv: {e}")
         
         # RSS 采集在当前环境网络受限，跳过以加快流程
