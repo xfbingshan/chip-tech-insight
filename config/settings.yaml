@@ -1,0 +1,98 @@
+# 芯片技术洞察平台配置
+
+# 采集配置
+collection:
+  arxiv:
+    categories:
+      - cs.AR  # 计算机体系结构
+      - cs.ET  # 新兴技术
+      - eess.SP # 信号处理
+      - cs.SY  # 系统与控制
+      - cs.DC  # 分布式/并行/集群计算
+    max_results: 50
+    days_back: 7
+  rss:
+    sources:
+      # 通用科技新闻
+      - name: "TechCrunch"
+        url: "https://techcrunch.com/category/artificial-intelligence/feed/"
+      - name: "AnandTech"
+        url: "https://www.anandtech.com/rss/"
+      # 芯片设计公司
+      - name: "Intel Newsroom"
+        url: "https://newsroom.intel.com/feed/"
+      - name: "Intel Tech Medium"
+        url: "https://medium.com/feed/intel-tech"
+      # 顶尖实验室
+      - name: "MIT News Research"
+        url: "https://news.mit.edu/rss/research"
+      # 通信公司（基站/射频/5G）
+      - name: "Ericsson News"
+        url: "https://www.ericsson.com/en/newsroom/rss"
+      - name: "Nokia Bell Labs"
+        url: "https://www.nokia.com/bell-labs/publications-and-media/blog/rss/"
+      - name: "ZTE ComSoc"
+        url: "https://techblog.comsoc.org/category/zte/feed/"
+      # Google News 聚合（针对无 RSS 的源：AMD、ETH、基站技术）
+      - name: "Google News AMD"
+        url: "https://news.google.com/rss/search?q=AMD+CPU+GPU+architecture+research&hl=en-US&gl=US&ceid=US:en"
+      - name: "Google News ETH Arch"
+        url: "https://news.google.com/rss/search?q=ETH+Zurich+computer+architecture+systems&hl=en-US&gl=US&ceid=US:en"
+      - name: "Google News Base Station"
+        url: "https://news.google.com/rss/search?q=Ericsson+OR+Nokia+OR+ZTE+base+station+5G+RAN&hl=en-US&gl=US&ceid=US:en"
+    max_entries: 20
+  # 无 RSS 的机构博客爬取配置
+  # 注：以下博客在当前测试环境网络受限，实际使用时取消注释即可
+  blogs:
+    # - name: "AMD Blogs"
+    #   url: "https://www.amd.com/en/blogs.html"
+    #   max_entries: 10
+    #   category: "news"
+    # - name: "NVIDIA Blog"
+    #   url: "https://developer.nvidia.com/blog/"
+    #   max_entries: 10
+    #   category: "news"
+    # - name: "Qualcomm News"
+    #   url: "https://www.qualcomm.com/news/onq"
+    #   max_entries: 10
+    #   category: "news"
+
+# LLM配置
+llm:
+  provider: "openai"  # 可选: openai, azure
+  model: "gpt-4o-mini"
+  temperature: 0.3
+  max_tokens: 2000
+  
+# 向量存储
+vector_store:
+  path: "./data/chroma_db"
+  collection_name: "chip_tech_papers"
+  embedding_model: "BAAI/bge-small-en-v1.5"
+  similarity_threshold: 0.85
+
+# 筛选阈值
+screening:
+  relevance_threshold: 6.0  # 0-10分，低于此值过滤
+  focus_areas:
+    - "先进封装"
+    - " chiplet"
+    - "EDA"
+    - "AI加速器"
+    - "存算一体"
+    - "先进工艺"
+    - "RISC-V"
+    - "光计算"
+    - "近存计算"
+    - "3D集成"
+
+# 报告配置
+reporting:
+  output_dir: "./data/reports"
+  templates_dir: "./templates"
+  one_pager_threshold: 7.5  # 低于此值生成一页简报，高于此值生成深度报告
+  
+# 调度配置
+schedule:
+  run_time: "08:00"  # 每日运行时间
+  weekly_report_day: "monday"  # 深度报告生成日
