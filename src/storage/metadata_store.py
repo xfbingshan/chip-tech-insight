@@ -22,10 +22,11 @@ class MetadataStore:
     def load_all(self) -> List[Dict]:
         """加载所有文档"""
         docs = []
-        if not self.index_file.exists():
+        idx_path = Path(self.index_file)
+        if not idx_path.exists():
             return docs
         
-        with open(self.index_file, "r", encoding="utf-8") as f:
+        with open(idx_path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line:

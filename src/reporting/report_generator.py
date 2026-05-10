@@ -47,7 +47,7 @@ class ReportGenerator:
         
         md_text = "\n".join(lines)
         filename = f"FlashBrief_{datetime.now().strftime('%Y%m%d')}_{self._safe_name(content.get('技术名称', 'unknown'))}.md"
-        filepath = self.output_dir / filename
+        filepath = Path(self.output_dir) / filename
         filepath.write_text(md_text, encoding="utf-8")
         return str(filepath)
     
@@ -119,7 +119,7 @@ class ReportGenerator:
         
         md_text = "\n".join(lines)
         filename = f"DeepDive_{datetime.now().strftime('%Y%m%d')}_{self._safe_name(content.get('封面标题', 'unknown'))}.md"
-        filepath = self.output_dir / filename
+        filepath = Path(self.output_dir) / filename
         filepath.write_text(md_text, encoding="utf-8")
         return str(filepath)
     
@@ -157,7 +157,7 @@ class ReportGenerator:
         
         md_text = "\n".join(lines)
         filename = f"OrgBrief_{datetime.now().strftime('%Y%m%d')}_{self._safe_name(org_name)}.md"
-        filepath = self.output_dir / filename
+        filepath = Path(self.output_dir) / filename
         filepath.write_text(md_text, encoding="utf-8")
         return str(filepath)
     
