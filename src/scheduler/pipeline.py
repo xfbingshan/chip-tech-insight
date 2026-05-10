@@ -12,6 +12,7 @@ from src.agents import ScreenerAgent, SummarizerAgent, InsightGeneratorAgent
 from src.storage import VectorStore, MetadataStore
 from src.reporting import ReportGenerator
 from src.reporting.ppt_generator import PPTGenerator
+from src.reporting.archive_manager import ArchiveManager
 from src.utils.config import config
 
 class InsightPipeline:
@@ -27,6 +28,7 @@ class InsightPipeline:
         self.metadata_store = MetadataStore()
         self.report_generator = ReportGenerator()
         self.ppt_generator = PPTGenerator()
+        self.archive_manager = ArchiveManager()
         
         self.one_pager_threshold = config.reporting.get("one_pager_threshold", 7.5)
         print("[Pipeline] Ready.")
@@ -39,6 +41,12 @@ class InsightPipeline:
         print("\n" + "="*60)
         print(f"[Pipeline] Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("="*60)
+        
+        # 清理过期归档
+        if not dry_run:
+            removed = self.archive_manager.cleanup_old_reports()
+            if removed:
+                print(f"[Archive] Cleaned up {len(removed)} old archive directories")
         
         # Stage 1: 采集
         print("\n[Stage 1] Collecting sources...")
@@ -125,7 +133,7 @@ class InsightPipeline:
                 path = self.report_generator.generate_org_brief(org_name, docs)
                 reports.append({"type": "org_brief", "topic": org_name, "path": path})
         
-        # Stage 6: 汇总
+        # Stage 6: 汇总与归档
         print("\n" + "="*60)
         print("[Pipeline] Summary")
         print("="*60)
@@ -134,8 +142,22 @@ class InsightPipeline:
         print(f"New unique documents: {len(processed)}")
         print(f"Reports generated: {len(reports)}")
         for r in reports:
+            path = r.get('path') or r.get('md_path') or r.get('ppt_path') or 'N/A'
             print(f"  - [{r['type']}] {r['topic']}")
-            print(f"    -> {r['path']}")
+            print(f"    -> {path}")
+        
+        # 归档报告
+        if not dry_run and reports:
+            all_paths = []
+            for r in reports:
+                for key in ('path', 'md_path', 'ppt_path'):
+                    p = r.get(key)
+                    if p:
+                        all_paths.append(p)
+            
+            if all_paths:
+                result = self.archive_manager.archive_reports(all_paths)
+                print(f"\n[Archive] Archived {len(result['archived'])} reports")
         
         return reports
     

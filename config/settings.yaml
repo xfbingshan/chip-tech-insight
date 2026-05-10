@@ -92,6 +92,50 @@ reporting:
   templates_dir: "./templates"
   one_pager_threshold: 7.5  # 低于此值生成一页简报，高于此值生成深度报告
   
+  # PPT 风格模板配置
+  templates:
+    default: "tech_blue"
+    tech_blue:
+      primary: "#1A237E"
+      accent: "#0096C7"
+      text: "#333333"
+      light_bg: "#F0F4F8"
+      white: "#FFFFFF"
+      title_font_size: 32
+      section_font_size: 22
+      body_font_size: 14
+      slide_width: 13.333
+      slide_height: 7.5
+    dark_mode:
+      primary: "#0D1B2A"
+      accent: "#00B4D8"
+      text: "#E0E1DD"
+      light_bg: "#1B263B"
+      white: "#FFFFFF"
+      title_font_size: 32
+      section_font_size: 22
+      body_font_size: 14
+      slide_width: 13.333
+      slide_height: 7.5
+    warm_orange:
+      primary: "#9C6644"
+      accent: "#D4A373"
+      text: "#3E2723"
+      light_bg: "#FAEDCD"
+      white: "#FFFFFF"
+      title_font_size: 32
+      section_font_size: 22
+      body_font_size: 14
+      slide_width: 13.333
+      slide_height: 7.5
+  
+  # 报告归档管理
+  archive:
+    enabled: true
+    keep_days: 30
+    archive_by_date: true
+    index_file: "./data/reports/archive_index.json"
+  
 # 调度配置
 schedule:
   run_time: "08:00"  # 每日运行时间

@@ -1,6 +1,7 @@
 """
 PPT 报告生成器
 支持两种模板：技术快讯（One-Pager）和深度洞察（Deep Dive）
+通过 template_config 读取主题配色与字体
 """
 import os
 from datetime import datetime
@@ -14,45 +15,41 @@ from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 
 from src.utils.config import config
+from src.reporting.template_config import load_template, PPTTemplate
 
-# 配色方案（科技蓝风格）
-COLOR_PRIMARY = RGBColor(0x1A, 0x23, 0x7E)      # 深蓝
-COLOR_ACCENT = RGBColor(0x00, 0x96, 0xC7)       # 亮蓝
-COLOR_TEXT = RGBColor(0x33, 0x33, 0x33)         # 深灰
-COLOR_LIGHT_BG = RGBColor(0xF0, 0xF4, 0xF8)    # 浅蓝背景
-COLOR_WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 
 class PPTGenerator:
     def __init__(self):
         self.output_dir = Path(config.reporting.get("output_dir", "./data/reports"))
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.template = load_template()
         self.prs = Presentation()
-        self.prs.slide_width = Inches(13.333)
-        self.prs.slide_height = Inches(7.5)
+        self.prs.slide_width = Inches(self.template.slide_width)
+        self.prs.slide_height = Inches(self.template.slide_height)
     
     def generate_flash_brief(self, content: Dict, docs: List[Dict]) -> str:
         """生成技术快讯（单页）"""
         self.prs = Presentation()
-        self.prs.slide_width = Inches(13.333)
-        self.prs.slide_height = Inches(7.5)
+        self.prs.slide_width = Inches(self.template.slide_width)
+        self.prs.slide_height = Inches(self.template.slide_height)
         
         slide_layout = self.prs.slide_layouts[6]  # 空白布局
         slide = self.prs.slides.add_slide(slide_layout)
         
         # 标题栏背景
         title_box = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(1.2)
+            MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(self.template.slide_width), Inches(1.2)
         )
         title_box.fill.solid()
-        title_box.fill.fore_color.rgb = COLOR_PRIMARY
+        title_box.fill.fore_color.rgb = self.template.primary
         title_box.line.fill.background()
         
         # 标题
         title_tf = title_box.text_frame
         title_tf.text = content.get("技术名称", "技术快讯")
-        title_tf.paragraphs[0].font.size = Pt(32)
+        title_tf.paragraphs[0].font.size = Pt(self.template.title_font_size)
         title_tf.paragraphs[0].font.bold = True
-        title_tf.paragraphs[0].font.color.rgb = COLOR_WHITE
+        title_tf.paragraphs[0].font.color.rgb = self.template.white
         title_tf.paragraphs[0].alignment = PP_ALIGN.LEFT
         title_tf.margin_left = Inches(0.5)
         title_tf.margin_top = Inches(0.3)
@@ -62,7 +59,7 @@ class PPTGenerator:
         date_tf = date_label.text_frame
         date_tf.text = datetime.now().strftime("%Y-%m-%d")
         date_tf.paragraphs[0].font.size = Pt(14)
-        date_tf.paragraphs[0].font.color.rgb = COLOR_WHITE
+        date_tf.paragraphs[0].font.color.rgb = self.template.white
         date_tf.paragraphs[0].alignment = PP_ALIGN.RIGHT
         
         # 关键创新
@@ -95,15 +92,15 @@ class PPTGenerator:
             MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.5), Inches(y_pos), Inches(12.3), Inches(1.0)
         )
         advice_box.fill.solid()
-        advice_box.fill.fore_color.rgb = COLOR_LIGHT_BG
-        advice_box.line.color.rgb = COLOR_ACCENT
+        advice_box.fill.fore_color.rgb = self.template.light_bg
+        advice_box.line.color.rgb = self.template.accent
         advice_box.line.width = Pt(2)
         
         advice_tf = advice_box.text_frame
         advice_tf.text = f"💡 建议：{content.get('一句话建议', '建议持续关注该技术方向')}"
         advice_tf.paragraphs[0].font.size = Pt(18)
         advice_tf.paragraphs[0].font.bold = True
-        advice_tf.paragraphs[0].font.color.rgb = COLOR_PRIMARY
+        advice_tf.paragraphs[0].font.color.rgb = self.template.primary
         advice_tf.paragraphs[0].alignment = PP_ALIGN.LEFT
         advice_tf.word_wrap = True
         advice_tf.margin_left = Inches(0.3)
@@ -123,8 +120,8 @@ class PPTGenerator:
     def generate_deep_dive(self, content: Dict, docs: List[Dict]) -> str:
         """生成深度洞察报告（多页）"""
         self.prs = Presentation()
-        self.prs.slide_width = Inches(13.333)
-        self.prs.slide_height = Inches(7.5)
+        self.prs.slide_width = Inches(self.template.slide_width)
+        self.prs.slide_height = Inches(self.template.slide_height)
         
         # 1. 封面
         self._create_cover(content)
@@ -165,9 +162,9 @@ class PPTGenerator:
         slide = self.prs.slides.add_slide(slide_layout)
         
         # 背景
-        bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(13.333), Inches(7.5))
+        bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(self.template.slide_width), Inches(self.template.slide_height))
         bg.fill.solid()
-        bg.fill.fore_color.rgb = COLOR_PRIMARY
+        bg.fill.fore_color.rgb = self.template.primary
         bg.line.fill.background()
         
         # 标题
@@ -176,7 +173,7 @@ class PPTGenerator:
         tf.text = content.get("封面标题", "深度洞察报告")
         tf.paragraphs[0].font.size = Pt(44)
         tf.paragraphs[0].font.bold = True
-        tf.paragraphs[0].font.color.rgb = COLOR_WHITE
+        tf.paragraphs[0].font.color.rgb = self.template.white
         tf.paragraphs[0].alignment = PP_ALIGN.CENTER
         
         # 核心结论
@@ -192,7 +189,7 @@ class PPTGenerator:
         dtf = date.text_frame
         dtf.text = datetime.now().strftime("%Y年%m月%d日")
         dtf.paragraphs[0].font.size = Pt(16)
-        dtf.paragraphs[0].font.color.rgb = COLOR_WHITE
+        dtf.paragraphs[0].font.color.rgb = self.template.white
         dtf.paragraphs[0].alignment = PP_ALIGN.CENTER
     
     def _create_content_slide(self, title: str, text: str):
@@ -204,8 +201,8 @@ class PPTGenerator:
         content = slide.shapes.add_textbox(Inches(0.7), Inches(1.2), Inches(12), Inches(5.8))
         tf = content.text_frame
         tf.text = text
-        tf.paragraphs[0].font.size = Pt(18)
-        tf.paragraphs[0].font.color.rgb = COLOR_TEXT
+        tf.paragraphs[0].font.size = Pt(self.template.body_font_size + 4)
+        tf.paragraphs[0].font.color.rgb = self.template.text
         tf.word_wrap = True
     
     def _create_list_slide(self, title: str, items: List[str]):
@@ -236,11 +233,11 @@ class PPTGenerator:
             cell = table.cell(0, i)
             cell.text = h
             cell.fill.solid()
-            cell.fill.fore_color.rgb = COLOR_PRIMARY
+            cell.fill.fore_color.rgb = self.template.primary
             paragraph = cell.text_frame.paragraphs[0]
             paragraph.font.size = Pt(14)
             paragraph.font.bold = True
-            paragraph.font.color.rgb = COLOR_WHITE
+            paragraph.font.color.rgb = self.template.white
         
         # 数据
         for r_idx, row in enumerate(rows, 1):
@@ -249,10 +246,10 @@ class PPTGenerator:
                 cell.text = str(row.get(h, ""))
                 paragraph = cell.text_frame.paragraphs[0]
                 paragraph.font.size = Pt(12)
-                paragraph.font.color.rgb = COLOR_TEXT
+                paragraph.font.color.rgb = self.template.text
                 if r_idx % 2 == 0:
                     cell.fill.solid()
-                    cell.fill.fore_color.rgb = COLOR_LIGHT_BG
+                    cell.fill.fore_color.rgb = self.template.light_bg
     
     def _create_swot_slide(self, swot: Dict):
         slide_layout = self.prs.slide_layouts[6]
@@ -261,7 +258,7 @@ class PPTGenerator:
         self._add_section_title(slide, "优劣势与风险分析", Inches(0.5), Inches(0.4))
         
         items = [
-            ("优势 (Strengths)", swot.get("优势", []), COLOR_ACCENT),
+            ("优势 (Strengths)", swot.get("优势", []), self.template.accent),
             ("劣势 (Weaknesses)", swot.get("劣势", []), RGBColor(0xE0, 0x6F, 0x1F)),
             ("机会 (Opportunities)", swot.get("机会", []), RGBColor(0x2E, 0x7D, 0x32)),
             ("威胁 (Threats)", swot.get("威胁", []), RGBColor(0xC6, 0x28, 0x28)),
@@ -272,7 +269,7 @@ class PPTGenerator:
         for (label, vals, color), (x, y) in zip(items, positions):
             box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(6), Inches(2.5))
             box.fill.solid()
-            box.fill.fore_color.rgb = COLOR_LIGHT_BG
+            box.fill.fore_color.rgb = self.template.light_bg
             box.line.color.rgb = color
             box.line.width = Pt(2)
             
@@ -286,7 +283,7 @@ class PPTGenerator:
                 p = tf.add_paragraph()
                 p.text = f"• {v}"
                 p.font.size = Pt(12)
-                p.font.color.rgb = COLOR_TEXT
+                p.font.color.rgb = self.template.text
                 p.space_after = Pt(4)
     
     def _create_actions_slide(self, actions: Dict):
@@ -298,14 +295,14 @@ class PPTGenerator:
         phases = [
             ("短期（3个月）", actions.get("短期", ""), RGBColor(0x2E, 0x7D, 0x32)),
             ("中期（1年）", actions.get("中期", ""), RGBColor(0xF9, 0xA8, 0x25)),
-            ("长期（3年）", actions.get("长期", ""), COLOR_PRIMARY),
+            ("长期（3年）", actions.get("长期", ""), self.template.primary),
         ]
         
         y = 1.2
         for label, text, color in phases:
             box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.7), Inches(y), Inches(12), Inches(1.6))
             box.fill.solid()
-            box.fill.fore_color.rgb = COLOR_LIGHT_BG
+            box.fill.fore_color.rgb = self.template.light_bg
             box.line.color.rgb = color
             box.line.width = Pt(2)
             
@@ -315,7 +312,7 @@ class PPTGenerator:
             tf.paragraphs[0].font.bold = True
             tf.paragraphs[0].font.color.rgb = color
             tf.paragraphs[1].font.size = Pt(14)
-            tf.paragraphs[1].font.color.rgb = COLOR_TEXT
+            tf.paragraphs[1].font.color.rgb = self.template.text
             tf.word_wrap = True
             tf.margin_left = Inches(0.2)
             tf.margin_top = Inches(0.1)
@@ -326,11 +323,13 @@ class PPTGenerator:
         box = slide.shapes.add_textbox(left, top, Inches(12), Inches(0.5))
         tf = box.text_frame
         tf.text = text
-        tf.paragraphs[0].font.size = Pt(22)
+        tf.paragraphs[0].font.size = Pt(self.template.section_font_size)
         tf.paragraphs[0].font.bold = True
-        tf.paragraphs[0].font.color.rgb = COLOR_PRIMARY
+        tf.paragraphs[0].font.color.rgb = self.template.primary
     
-    def _add_bullet_text(self, slide, text: str, left, top, width=Inches(12), font_size=14, color=COLOR_TEXT):
+    def _add_bullet_text(self, slide, text: str, left, top, width=Inches(12), font_size=14, color=None):
+        if color is None:
+            color = self.template.text
         box = slide.shapes.add_textbox(left, top, width, Inches(0.5))
         tf = box.text_frame
         tf.text = text
