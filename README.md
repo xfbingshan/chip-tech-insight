@@ -1,5 +1,8 @@
 # 芯片技术洞察平台 (Chip Tech Insight)
 
+[![CI](https://github.com/xfbingshan/chip-tech-insight/actions/workflows/ci.yml/badge.svg)](https://github.com/xfbingshan/chip-tech-insight/actions/workflows/ci.yml)
+[![Lint](https://github.com/xfbingshan/chip-tech-insight/actions/workflows/lint.yml/badge.svg)](https://github.com/xfbingshan/chip-tech-insight/actions/workflows/lint.yml)
+
 自动追踪业界与学术界芯片技术进展，生成结构化 PPT 洞察报告。
 
 ## 核心能力
@@ -33,6 +36,12 @@ chip-tech-insight/
 ├── main.py                    # 主入口
 └── requirements.txt
 ```
+
+## 持续集成
+
+- **测试矩阵**：Python 3.10 / 3.11 / 3.12 × Ubuntu / Windows
+- **代码质量**：Ruff linter + formatter
+- 详见 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) 与 [`.github/workflows/lint.yml`](.github/workflows/lint.yml)
 
 ## 快速开始
 

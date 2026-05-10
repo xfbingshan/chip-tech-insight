@@ -3,7 +3,7 @@ PPT 模板配置加载器
 支持从 settings.yaml 读取多套主题配色与字体参数
 """
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Optional
 from pptx.dml.color import RGBColor
 from src.utils.config import config
 
