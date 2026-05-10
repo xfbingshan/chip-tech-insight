@@ -1,7 +1,7 @@
 """
 ScreenerAgent 单元测试
 """
-import pytest
+
 from src.agents.screener import ScreenerAgent
 
 
@@ -46,7 +46,10 @@ class TestScreenerAgent:
         result = agent._mock_screen(doc)
         assert result is not None
         assert result["assessment"]["value_score"] >= result["assessment"]["relevance"]
-        assert "Intel" in result["assessment"]["key_players"] or "intel" in result["assessment"]["key_players"]
+        assert (
+            "Intel" in result["assessment"]["key_players"]
+            or "intel" in result["assessment"]["key_players"]
+        )
 
     def test_mock_screen_categorizes_base_station(self):
         """能正确分类基站/RAN 相关文献"""

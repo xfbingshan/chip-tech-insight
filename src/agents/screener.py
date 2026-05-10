@@ -1,13 +1,14 @@
 """
 初筛 Agent：判断相关性、分类、价值
 """
+
 import json
 import re
-import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from openai import OpenAI
 from src.utils.config import config
+
 
 class ScreenerAgent:
     SYSTEM_PROMPT: str = """你是资深芯片技术规划专家，拥有20年半导体行业经验。
@@ -39,7 +40,7 @@ class ScreenerAgent:
         self.max_tokens = cfg.get("max_tokens", 2000)
         self.threshold = config.screening.get("relevance_threshold", 6.0)
         self.focus_areas = config.screening.get("focus_areas", [])
-        
+
         # 初始化 LLM 客户端（若未配置 API Key 则使用 mock）
         api_key = config.openai_api_key
         if api_key and api_key.startswith("sk-"):
@@ -52,13 +53,13 @@ class ScreenerAgent:
             self.client = None
             self.use_mock = True
             print("[Screener] OPENAI_API_KEY not set, using MOCK mode for demo.")
-    
+
     def screen(self, doc: Dict[str, str]) -> Optional[Dict[str, Any]]:
         if self.use_mock:
             return self._mock_screen(doc)
-        
+
         text = f"标题：{doc.get('title', '')}\n\n摘要：{doc.get('abstract', '')[:2000]}"
-        
+
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -69,26 +70,26 @@ class ScreenerAgent:
                     {"role": "user", "content": text},
                 ],
             )
-            
+
             content = response.choices[0].message.content
             content = re.sub(r"```json\s*", "", content)
             content = re.sub(r"```\s*", "", content)
-            
+
             result = json.loads(content.strip())
-            
+
             if result.get("relevance", 0) < self.threshold:
                 return None
-            
+
             return {
                 **doc,
                 "assessment": result,
                 "screened_at": datetime.now().isoformat(),
             }
-            
+
         except (json.JSONDecodeError, KeyError, ValueError) as e:
             print(f"[Screener Error] {doc.get('title', '')[:40]}: {e}")
             return None
-    
+
     def batch_screen(self, docs: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         results = []
         for doc in docs:
@@ -96,83 +97,278 @@ class ScreenerAgent:
             if screened:
                 results.append(screened)
         return results
-    
+
     def _mock_screen(self, doc: Dict[str, str]) -> Optional[Dict[str, Any]]:
         """Mock 模式：基于关键词规则做初筛，用于无 API Key 演示"""
         title = doc.get("title", "").lower()
         abstract = doc.get("abstract", "").lower()
         text = title + " " + abstract
-        
+
         # 芯片相关关键词 + 目标机构关键词
         # 芯片相关关键词 + 目标机构关键词
-        chip_keywords = ["chip", "processor", "cpu", "gpu", "asic", "fpga", "soc", "memory",
-                         "dram", "sram", "cache", "interconnect", "packaging", "eda", "verification",
-                         "synthesis", "layout", "transistor", "cmos", "finfet", "gaa", "photonics",
-                         "optical", "quantum", "risc-v", "riscv", "architecture", "microarchitecture",
-                         "chiplet", "3d ic", "tsv", "interposer", "die", "wafer", "lithography",
-                         "annealing", "anneal", "neuromorphic", "in-memory computing", "compute-in-memory",
-                         "ai accelerator", "neural processing", "npu", "tpu", "hardware",
-                         "circuit", "analog", "mixed-signal", "rf", "serdes", "pll",
-                         # 芯片设计公司
-                         "intel", "amd", "nvidia", "qualcomm", "broadcom", "marvell", "mediatek",
-                         "apple silicon", "amazon graviton", "google tpu", "microsoft maia",
-                         "samsung lsi", "arm ", "ibm research",
-                         # 顶尖学术实验室
-                         "eth zurich", "mit ", "massachusetts institute", "stanford", "uc berkeley",
-                         "cmu ", "carnegie mellon", "uiuc", "university of illinois",
-                         "ut austin", "university of washington", "princeton", "caltech",
-                         "georgia tech", "university of toronto", "epfl", "cambridge",
-                         "imperial college", "tsinghua", "peking university", "chinese academy of sciences",
-                         # 通信/基站公司
-                         "ericsson", "zte", "nokia", "bell labs", "huawei", "cisco",
-                         "base station", "ran", "radio access", "enodeb", "gnodeb",
-                         "基站", "射频", "通信", "5g", "6g", "wireless", "mmwave", "beamforming",
-                         "massive mimo", "ofdm", "cfr", "dpd"]
-        
+        chip_keywords = [
+            "chip",
+            "processor",
+            "cpu",
+            "gpu",
+            "asic",
+            "fpga",
+            "soc",
+            "memory",
+            "dram",
+            "sram",
+            "cache",
+            "interconnect",
+            "packaging",
+            "eda",
+            "verification",
+            "synthesis",
+            "layout",
+            "transistor",
+            "cmos",
+            "finfet",
+            "gaa",
+            "photonics",
+            "optical",
+            "quantum",
+            "risc-v",
+            "riscv",
+            "architecture",
+            "microarchitecture",
+            "chiplet",
+            "3d ic",
+            "tsv",
+            "interposer",
+            "die",
+            "wafer",
+            "lithography",
+            "annealing",
+            "anneal",
+            "neuromorphic",
+            "in-memory computing",
+            "compute-in-memory",
+            "ai accelerator",
+            "neural processing",
+            "npu",
+            "tpu",
+            "hardware",
+            "circuit",
+            "analog",
+            "mixed-signal",
+            "rf",
+            "serdes",
+            "pll",
+            # 芯片设计公司
+            "intel",
+            "amd",
+            "nvidia",
+            "qualcomm",
+            "broadcom",
+            "marvell",
+            "mediatek",
+            "apple silicon",
+            "amazon graviton",
+            "google tpu",
+            "microsoft maia",
+            "samsung lsi",
+            "arm ",
+            "ibm research",
+            # 顶尖学术实验室
+            "eth zurich",
+            "mit ",
+            "massachusetts institute",
+            "stanford",
+            "uc berkeley",
+            "cmu ",
+            "carnegie mellon",
+            "uiuc",
+            "university of illinois",
+            "ut austin",
+            "university of washington",
+            "princeton",
+            "caltech",
+            "georgia tech",
+            "university of toronto",
+            "epfl",
+            "cambridge",
+            "imperial college",
+            "tsinghua",
+            "peking university",
+            "chinese academy of sciences",
+            # 通信/基站公司
+            "ericsson",
+            "zte",
+            "nokia",
+            "bell labs",
+            "huawei",
+            "cisco",
+            "base station",
+            "ran",
+            "radio access",
+            "enodeb",
+            "gnodeb",
+            "基站",
+            "射频",
+            "通信",
+            "5g",
+            "6g",
+            "wireless",
+            "mmwave",
+            "beamforming",
+            "massive mimo",
+            "ofdm",
+            "cfr",
+            "dpd",
+        ]
+
         relevance = 0
         matched_keywords = []
         for kw in chip_keywords:
             if kw in text:
                 relevance += 1.5
                 matched_keywords.append(kw)
-        
+
         relevance = min(relevance, 10)
         if relevance < self.threshold:
             return None
-        
+
         # 简单分类 + 机构/场景细分
         category = "Other"
-        if any(k in text for k in ["eda", "synthesis", "verification", "layout", "place", "route"]):
+        if any(
+            k in text
+            for k in ["eda", "synthesis", "verification", "layout", "place", "route"]
+        ):
             category = "EDA"
-        elif any(k in text for k in ["chiplet", "3d ic", "tsv", "interposer", "packaging", "advanced packaging"]):
+        elif any(
+            k in text
+            for k in [
+                "chiplet",
+                "3d ic",
+                "tsv",
+                "interposer",
+                "packaging",
+                "advanced packaging",
+            ]
+        ):
             category = "Packaging"
-        elif any(k in text for k in ["process", "lithography", "transistor", "cmos", "finfet", "gaa", "node", "nm "]):
+        elif any(
+            k in text
+            for k in [
+                "process",
+                "lithography",
+                "transistor",
+                "cmos",
+                "finfet",
+                "gaa",
+                "node",
+                "nm ",
+            ]
+        ):
             category = "Process"
-        elif any(k in text for k in ["memory", "dram", "sram", "cache", "hbm", "storage"]):
+        elif any(
+            k in text for k in ["memory", "dram", "sram", "cache", "hbm", "storage"]
+        ):
             category = "Memory"
-        elif any(k in text for k in ["ai accelerator", "neural", "npu", "tpu", "deep learning", "machine learning", "inference", "training"]):
+        elif any(
+            k in text
+            for k in [
+                "ai accelerator",
+                "neural",
+                "npu",
+                "tpu",
+                "deep learning",
+                "machine learning",
+                "inference",
+                "training",
+            ]
+        ):
             category = "AI Chip"
-        elif any(k in text for k in ["architecture", "microarchitecture", "superscalar", "out-of-order", "pipeline", "branch prediction"]):
+        elif any(
+            k in text
+            for k in [
+                "architecture",
+                "microarchitecture",
+                "superscalar",
+                "out-of-order",
+                "pipeline",
+                "branch prediction",
+            ]
+        ):
             category = "Architecture"
-        elif any(k in text for k in ["interconnect", "network-on-chip", "noc", "bus", "mesh", "topology"]):
+        elif any(
+            k in text
+            for k in [
+                "interconnect",
+                "network-on-chip",
+                "noc",
+                "bus",
+                "mesh",
+                "topology",
+            ]
+        ):
             category = "Interconnect"
-        elif any(k in text for k in ["photonics", "optical", "silicon photonics", "optical interconnect"]):
+        elif any(
+            k in text
+            for k in [
+                "photonics",
+                "optical",
+                "silicon photonics",
+                "optical interconnect",
+            ]
+        ):
             category = "Photonics"
-        elif any(k in text for k in ["base station", "ran", "enodeb", "gnodeb", "基站", "射频", "beamforming", "mmwave", "5g", "6g"]):
+        elif any(
+            k in text
+            for k in [
+                "base station",
+                "ran",
+                "enodeb",
+                "gnodeb",
+                "基站",
+                "射频",
+                "beamforming",
+                "mmwave",
+                "5g",
+                "6g",
+            ]
+        ):
             category = "Base Station / RAN"
-        
+
         # TRL 简单估计
         trl = 3
         if "experimental" in text or "prototype" in text or "demonstration" in text:
             trl = 4
-        if "fabricated" in text or "test chip" in text or "tape-out" in text or "silicon" in text:
+        if (
+            "fabricated" in text
+            or "test chip" in text
+            or "tape-out" in text
+            or "silicon" in text
+        ):
             trl = 6
         if "production" in text or "commercial" in text or "product" in text:
             trl = 8
-        
+
         # 机构加权：若来自目标机构，提升价值分
-        tier1_orgs = ["intel", "amd", "nvidia", "eth zurich", "mit ", "stanford", "uc berkeley", "arm "]
-        tier2_orgs = ["qualcomm", "broadcom", "samsung", "tsinghua", "peking university", "cmu ", "carnegie mellon", "google tpu"]
+        tier1_orgs = [
+            "intel",
+            "amd",
+            "nvidia",
+            "eth zurich",
+            "mit ",
+            "stanford",
+            "uc berkeley",
+            "arm ",
+        ]
+        tier2_orgs = [
+            "qualcomm",
+            "broadcom",
+            "samsung",
+            "tsinghua",
+            "peking university",
+            "cmu ",
+            "carnegie mellon",
+            "google tpu",
+        ]
         org_bonus = 0
         matched_orgs = []
         for org in tier1_orgs:
@@ -183,25 +379,29 @@ class ScreenerAgent:
             if org in text:
                 org_bonus += 1.0
                 matched_orgs.append(org.strip())
-        
+
         # 价值分 = 基础相关性 + TRL加成 + 机构加成
         value_score = min(relevance + (1 if trl >= 6 else 0) + org_bonus, 10)
-        
+
         decision = "Flash Brief"
         if value_score >= 8 or (trl in [4, 5, 6] and org_bonus > 0):
             decision = "Deep Dive"
-        
+
         result = {
             "relevance": round(relevance, 1),
             "category": category,
-            "summary": f"涉及 {', '.join(matched_keywords[:3])} 的芯片技术研究" if matched_keywords else "芯片相关技术研究",
+            "summary": f"涉及 {', '.join(matched_keywords[:3])} 的芯片技术研究"
+            if matched_keywords
+            else "芯片相关技术研究",
             "trl": trl,
             "value_score": round(value_score, 1),
             "decision": decision,
             "key_players": matched_orgs[:3] if matched_orgs else [],
-            "keywords": list(set(matched_keywords))[:5] if matched_keywords else ["chip"],
+            "keywords": list(set(matched_keywords))[:5]
+            if matched_keywords
+            else ["chip"],
         }
-        
+
         return {
             **doc,
             "assessment": result,

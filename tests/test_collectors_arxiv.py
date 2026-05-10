@@ -1,8 +1,8 @@
 """
 ArxivCollector 单元测试
 """
+
 from unittest.mock import patch, MagicMock
-from datetime import datetime
 from src.collectors.arxiv_collector import ArxivCollector
 
 

@@ -1,8 +1,8 @@
 """
 ReportGenerator 单元测试
 """
+
 from pathlib import Path
-import pytest
 from src.reporting.report_generator import ReportGenerator
 
 
@@ -40,7 +40,12 @@ class TestReportGenerator:
             "技术原理": "测试原理",
             "业界进展": ["里程碑1"],
             "竞争格局矩阵": [{"玩家": "A", "路线": "X"}],
-            "优劣势分析": {"优势": ["强"], "劣势": ["弱"], "机会": ["多"], "威胁": ["少"]},
+            "优劣势分析": {
+                "优势": ["强"],
+                "劣势": ["弱"],
+                "机会": ["多"],
+                "威胁": ["少"],
+            },
             "对芯片设计的启示": ["启示1"],
             "行动建议": {"短期": "做A", "中期": "做B", "长期": "做C"},
         }

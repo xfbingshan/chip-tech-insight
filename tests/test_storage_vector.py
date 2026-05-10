@@ -1,8 +1,8 @@
 """
 VectorStore 单元测试
 """
+
 from pathlib import Path
-import pytest
 from src.storage.vector_store import VectorStore
 
 
@@ -65,6 +65,7 @@ class TestVectorStore:
     def test_cosine_similarity_range(self, temp_dir):
         """余弦相似度应在 [0, 1] 范围内"""
         import numpy as np
+
         store = VectorStore()
         a = np.array([1.0, 0.0, 0.0])
         b = np.array([0.0, 1.0, 0.0])
@@ -79,7 +80,9 @@ class TestVectorStore:
     def test_tokenize_extracts_keywords(self, temp_dir):
         """分词应提取有效关键词"""
         store = VectorStore()
-        tokens = store._tokenize("This is a Test of CHIP design and artificial intelligence processing!")
+        tokens = store._tokenize(
+            "This is a Test of CHIP design and artificial intelligence processing!"
+        )
         assert "test" in tokens
         assert "chip" in tokens
         assert "design" in tokens

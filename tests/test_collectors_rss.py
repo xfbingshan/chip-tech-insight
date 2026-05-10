@@ -1,8 +1,8 @@
 """
 RSSCollector 单元测试
 """
+
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
 from src.collectors.rss_collector import RSSCollector
 
 
@@ -33,7 +33,9 @@ class TestRSSCollector:
         mock_get.return_value = mock_resp
 
         collector = RSSCollector()
-        collector.sources = [{"name": "Intel Newsroom", "url": "https://test.example.com/rss"}]
+        collector.sources = [
+            {"name": "Intel Newsroom", "url": "https://test.example.com/rss"}
+        ]
         collector.max_entries = 10
         collector.days_back = 30
         docs = collector.fetch()
@@ -61,7 +63,9 @@ class TestRSSCollector:
         mock_get.return_value = mock_resp
 
         collector = RSSCollector()
-        collector.sources = [{"name": "MIT News", "url": "https://test.example.com/atom"}]
+        collector.sources = [
+            {"name": "MIT News", "url": "https://test.example.com/atom"}
+        ]
         collector.max_entries = 10
         collector.days_back = 30
         docs = collector.fetch()
@@ -101,6 +105,7 @@ class TestRSSCollector:
     def test_fetch_graceful_on_error(self, mock_get):
         """某个源失败时优雅跳过"""
         import requests
+
         mock_get.side_effect = requests.exceptions.RequestException("Network error")
 
         collector = RSSCollector()

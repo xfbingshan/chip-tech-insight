@@ -1,12 +1,11 @@
 """
 主工作流编排：从采集到报告的完整 Pipeline
 """
-import os
+
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from collections import defaultdict
 
 from src.collectors import ArxivCollector, RSSCollector, BlogScraperCollector
@@ -16,6 +15,7 @@ from src.reporting import ReportGenerator
 from src.reporting.ppt_generator import PPTGenerator
 from src.reporting.archive_manager import ArchiveManager
 from src.utils.config import config
+
 
 class InsightPipeline:
     def __init__(self) -> None:
@@ -31,49 +31,51 @@ class InsightPipeline:
         self.report_generator = ReportGenerator()
         self.ppt_generator = PPTGenerator()
         self.archive_manager = ArchiveManager()
-        
-        self.one_pager_threshold: float = config.reporting.get("one_pager_threshold", 7.5)
+
+        self.one_pager_threshold: float = config.reporting.get(
+            "one_pager_threshold", 7.5
+        )
         print("[Pipeline] Ready.")
-    
+
     def run(self, dry_run: bool = False) -> List[Dict[str, Any]]:
         """
         执行完整工作流
         dry_run: 如果为 True，不保存到数据库，仅打印结果
         """
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print(f"[Pipeline] Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("="*60)
-        
+        print("=" * 60)
+
         # 清理过期归档
         if not dry_run:
             removed = self.archive_manager.cleanup_old_reports()
             if removed:
                 print(f"[Archive] Cleaned up {len(removed)} old archive directories")
-        
+
         # Stage 1: 采集
         print("\n[Stage 1] Collecting sources...")
         raw_docs = self._collect()
         print(f"[Stage 1] Total raw documents: {len(raw_docs)}")
-        
+
         if not raw_docs:
             print("[Pipeline] No new documents found. Exiting.")
             return
-        
+
         # Stage 2: 初筛
         print("\n[Stage 2] Screening documents...")
         screened = self.screener.batch_screen(raw_docs)
         print(f"[Stage 2] Passed screening: {len(screened)} / {len(raw_docs)}")
-        
+
         if not screened:
             print("[Pipeline] No documents passed screening. Exiting.")
             return
-        
+
         # Stage 3: 摘要与向量化
         print("\n[Stage 3] Summarizing and indexing...")
         processed = []
         for doc in screened:
             summarized = self.summarizer.summarize(doc)
-            
+
             if not dry_run:
                 is_new = self.vector_store.add(summarized)
                 if is_new:
@@ -81,52 +83,86 @@ class InsightPipeline:
                     processed.append(summarized)
             else:
                 processed.append(summarized)
-        
+
         print(f"[Stage 3] New unique documents: {len(processed)}")
-        
+
         if not processed:
             print("[Pipeline] No new unique documents. Exiting.")
             return
-        
+
         # Stage 4: 按技术方向聚类
         print("\n[Stage 4] Clustering by technology direction...")
         clusters = self._cluster(processed)
         print(f"[Stage 4] Formed {len(clusters)} clusters")
-        
+
         # Stage 4b: 机构维度聚类
         print("\n[Stage 4b] Clustering by organization...")
         org_clusters = self._cluster_by_org(processed)
         print(f"[Stage 4b] Formed {len(org_clusters)} organization clusters")
-        
+
         # Stage 5: 生成技术方向报告
         print("\n[Stage 5] Generating technology reports...")
         reports = []
         for cluster_name, docs in clusters.items():
-            avg_score = sum(d.get("assessment", {}).get("value_score", 0) for d in docs) / len(docs)
-            
+            avg_score = sum(
+                d.get("assessment", {}).get("value_score", 0) for d in docs
+            ) / len(docs)
+
             if avg_score >= self.one_pager_threshold and len(docs) >= 2:
-                print(f"  [Deep Dive] {cluster_name} ({len(docs)} docs, avg_score={avg_score:.1f})")
+                print(
+                    f"  [Deep Dive] {cluster_name} ({len(docs)} docs, avg_score={avg_score:.1f})"
+                )
                 content = self.insight_generator.generate_deep_dive(docs)
                 if not dry_run:
                     md_path = self.report_generator.generate_deep_dive(content, docs)
                     try:
                         ppt_path = self.ppt_generator.generate_deep_dive(content, docs)
-                        reports.append({"type": "deep_dive", "topic": cluster_name, "md_path": md_path, "ppt_path": ppt_path})
+                        reports.append(
+                            {
+                                "type": "deep_dive",
+                                "topic": cluster_name,
+                                "md_path": md_path,
+                                "ppt_path": ppt_path,
+                            }
+                        )
                     except OSError as e:
                         print(f"    [PPT Error] {e}")
-                        reports.append({"type": "deep_dive", "topic": cluster_name, "md_path": md_path})
+                        reports.append(
+                            {
+                                "type": "deep_dive",
+                                "topic": cluster_name,
+                                "md_path": md_path,
+                            }
+                        )
             else:
-                print(f"  [Flash Brief] {cluster_name} ({len(docs)} docs, avg_score={avg_score:.1f})")
+                print(
+                    f"  [Flash Brief] {cluster_name} ({len(docs)} docs, avg_score={avg_score:.1f})"
+                )
                 content = self.insight_generator.generate_flash(docs)
                 if not dry_run:
                     md_path = self.report_generator.generate_flash_brief(content, docs)
                     try:
-                        ppt_path = self.ppt_generator.generate_flash_brief(content, docs)
-                        reports.append({"type": "flash_brief", "topic": cluster_name, "md_path": md_path, "ppt_path": ppt_path})
+                        ppt_path = self.ppt_generator.generate_flash_brief(
+                            content, docs
+                        )
+                        reports.append(
+                            {
+                                "type": "flash_brief",
+                                "topic": cluster_name,
+                                "md_path": md_path,
+                                "ppt_path": ppt_path,
+                            }
+                        )
                     except OSError as e:
                         print(f"    [PPT Error] {e}")
-                        reports.append({"type": "flash_brief", "topic": cluster_name, "md_path": md_path})
-        
+                        reports.append(
+                            {
+                                "type": "flash_brief",
+                                "topic": cluster_name,
+                                "md_path": md_path,
+                            }
+                        )
+
         # Stage 5b: 生成机构动态报告
         print("\n[Stage 5b] Generating organization briefs...")
         for org_name, docs in org_clusters.items():
@@ -134,35 +170,35 @@ class InsightPipeline:
             if not dry_run:
                 path = self.report_generator.generate_org_brief(org_name, docs)
                 reports.append({"type": "org_brief", "topic": org_name, "path": path})
-        
+
         # Stage 6: 汇总与归档
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("[Pipeline] Summary")
-        print("="*60)
+        print("=" * 60)
         print(f"Raw documents collected: {len(raw_docs)}")
         print(f"Passed screening: {len(screened)}")
         print(f"New unique documents: {len(processed)}")
         print(f"Reports generated: {len(reports)}")
         for r in reports:
-            path = r.get('path') or r.get('md_path') or r.get('ppt_path') or 'N/A'
+            path = r.get("path") or r.get("md_path") or r.get("ppt_path") or "N/A"
             print(f"  - [{r['type']}] {r['topic']}")
             print(f"    -> {path}")
-        
+
         # 归档报告
         if not dry_run and reports:
             all_paths = []
             for r in reports:
-                for key in ('path', 'md_path', 'ppt_path'):
+                for key in ("path", "md_path", "ppt_path"):
                     p = r.get(key)
                     if p:
                         all_paths.append(p)
-            
+
             if all_paths:
                 result = self.archive_manager.archive_reports(all_paths)
                 print(f"\n[Archive] Archived {len(result['archived'])} reports")
-        
+
         return reports
-    
+
     def _collect(self) -> List[Dict]:
         """采集所有数据源"""
         docs = []
@@ -172,7 +208,7 @@ class InsightPipeline:
             docs.extend(arxiv_docs)
         except (requests.exceptions.RequestException, ET.ParseError) as e:
             print(f"[Collector Error] arXiv: {e}")
-        
+
         # RSS 采集在当前环境网络受限，跳过以加快流程
         # try:
         #     rss_docs = self.rss_collector.fetch()
@@ -180,7 +216,7 @@ class InsightPipeline:
         #     docs.extend(rss_docs)
         # except Exception as e:
         #     print(f"[Collector Error] RSS: {e}")
-        
+
         # Blogs 采集在当前环境网络受限，跳过
         # try:
         #     blog_docs = self.blog_collector.fetch()
@@ -188,9 +224,9 @@ class InsightPipeline:
         #     docs.extend(blog_docs)
         # except Exception as e:
         #     print(f"[Collector Error] Blogs: {e}")
-        
+
         return docs
-    
+
     def _cluster(self, docs: List[Dict]) -> Dict[str, List[Dict]]:
         """
         按技术分类聚类
@@ -201,9 +237,9 @@ class InsightPipeline:
             assessment = doc.get("assessment", {})
             category = assessment.get("category", "Other")
             clusters[category].append(doc)
-        
+
         return dict(clusters)
-    
+
     def _cluster_by_org(self, docs: List[Dict]) -> Dict[str, List[Dict]]:
         """
         按机构维度聚类
@@ -223,7 +259,7 @@ class InsightPipeline:
             "Amazon Graviton": "Amazon Graviton",
             "Microsoft Maia": "Microsoft Maia",
         }
-        
+
         clusters = defaultdict(list)
         for doc in docs:
             assessment = doc.get("assessment", {})
@@ -233,6 +269,6 @@ class InsightPipeline:
                 org_clean = NAME_MAP.get(org_clean, org_clean)
                 if org_clean and len(org_clean) > 1:
                     clusters[org_clean].append(doc)
-        
+
         # 只保留有 >=1 篇文献的机构
         return {k: v for k, v in clusters.items() if len(v) >= 1}
