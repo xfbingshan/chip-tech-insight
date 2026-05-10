@@ -40,7 +40,8 @@ env/
 data/chroma_db/
 data/vector_db/
 data/documents/
-data/reports/*.md
+data/reports/*
+!data/reports/.gitkeep
 
 # OS
 .DS_Store
